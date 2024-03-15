@@ -377,8 +377,10 @@ func checkAuthorization(ctx context.Context, r *http.Request, cs *registry.Charg
 		span.SetAttributes(attribute.String("auth.failure_reason", "no basic auth"))
 		return false
 	}
-	if username != cs.ClientId {
-		span.SetAttributes(attribute.String("auth.failure_reason", "invalid username"))
+	if username != cs.ClientId && !cs.InvalidUsernameAllowed {
+		span.SetAttributes(
+			attribute.String("auth.failure_reason", "invalid username"),
+			attribute.String("auth.username", username))
 		return false
 	}
 	sha256pw := sha256.Sum256([]byte(password))
