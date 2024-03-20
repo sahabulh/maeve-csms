@@ -93,10 +93,14 @@ fileignoreconfig:
     checksum: ff19ad1feeb979a62c6a53e256ab3fe879bd540242153792b8b1148ae7010c4b
   - filename: manager/handlers/ocpp16/stop_transaction.go
     checksum: 26b2a5113699eb2d1558d782785a5a44ac17477e1d6d47be9f0ae9a0d0877242
+  - filename: manager/handlers/ocpp201/delete_certificate_result_test.go
+    checksum: 07714e5e17df15ce37b99c00ad7fe265b295993e0063456c3a02a70ab23fe74e
   - filename: manager/handlers/ocpp201/get_certificate_status_test.go
     checksum: c181e8cd66c0b11de814810bf8d2dd411489ad5e0dc0e47ec5ca0555148b6ecd
+  - filename: manager/handlers/ocpp201/get_installed_certificate_ids_result_test.go
+    checksum: b201a32b29e4fea3559cf1f5db272492053c0a9062ea1a56bd9655b841f667e0
   - filename: manager/handlers/ocpp201/routing_test.go
-    checksum: 5f315b4c0c350bd5932fbfbe6301b5f9093b2df0d7c13e2c694c20ac2ac27764
+    checksum: a1e405fa7deb18e3c4af7a690545c6c7996f37f50d41f678c28c0997e37ff430
   - filename: manager/handlers/router_test.go
     checksum: 817b5440e8ef6f40cd654d541ab854e2fb5f3104f21b5a89f4fef93df8ad6240
   - filename: manager/ocpi/correlation.go
@@ -123,10 +127,16 @@ fileignoreconfig:
     checksum: 0d8a2377b6f329c6c765c9be5f5720c1b6a06de8569be8251747e70e94538b69
   - filename: manager/ocpp/ocpp201/certificate_signed_request.go
     checksum: ce7ab452c6bafff18dd02b023d994ae7916fd6ec12537c28ff30796f48340da0
+  - filename: manager/ocpp/ocpp201/get_installed_certificate_ids_response.go
+    checksum: f913c615d89b1e6970be051566b4e394ca41dbcf88347d75325a203f6c7a2b14
   - filename: manager/ocpp/ocpp201/get_variables_response.go
     checksum: 59847ff1e1e7e69859e48cbb64b1bfaacd304e66854a9b18bfccbb6bc2280537
   - filename: manager/ocpp/ocpp201/id_token_enum_type.go
     checksum: 12cb2bc8ca2fe84231986857696a463e3dff4d5f9cdde9b265899b09bb1f95b0
+  - filename: manager/ocpp/ocpp201/notify_report_request.go
+    checksum: 56f5032378467e28dfc09b1c76d8eb7d96d13be2f14408532d9fdb284059178a
+  - filename: manager/ocpp/ocpp201/set_network_profile_request.go
+    checksum: 71232daa127770a24dc1fb540294537d431b25e7db12761fef48499a07ddcbfa
   - filename: manager/ocpp/ocpp201/set_variables_request.go
     checksum: d89e126fff18c8e6ecdc170a86bceb01fd2f46a676cae7178c17d1fa3e642613
   - filename: manager/ocpp/ocpp201/transactionevent_request.go

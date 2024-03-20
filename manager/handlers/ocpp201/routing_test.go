@@ -139,6 +139,12 @@ func TestRoutingCalls(t *testing.T) {
 				},
 			},
 		},
+		"NotifyReport": &types.NotifyReportRequestJson{
+			GeneratedAt: "2024-03-18T17:50:00.000Z",
+			RequestId:   33,
+			SeqNo:       1,
+			Tbc:         false,
+		},
 		"SecurityEventNotification": &types.SecurityEventNotificationRequestJson{
 			Timestamp: "2023-06-15T15:05:00+01:00",
 			Type:      "SettingSystemTime",
@@ -258,6 +264,57 @@ func TestRoutingCallResults(t *testing.T) {
 				Status: types.ChangeAvailabilityStatusEnumTypeAccepted,
 			},
 		},
+		"DeleteCertificate": {
+			request: &types.DeleteCertificateRequestJson{
+				CertificateHashData: types.CertificateHashDataType{
+					HashAlgorithm:  types.HashAlgorithmEnumTypeSHA256,
+					IssuerKeyHash:  "ABC123",
+					IssuerNameHash: "ABCDEF",
+					SerialNumber:   "1234578",
+				},
+			},
+			response: &types.DeleteCertificateResponseJson{
+				Status: types.DeleteCertificateStatusEnumTypeAccepted,
+			},
+		},
+		"GetBaseReport": {
+			request: &types.GetBaseReportRequestJson{
+				RequestId:  99,
+				ReportBase: types.ReportBaseEnumTypeConfigurationInventory,
+			},
+			response: &types.GetBaseReportResponseJson{
+				Status: types.GenericDeviceModelStatusEnumTypeEmptyResultSet,
+			},
+		},
+		"GetInstalledCertificateIds": {
+			request: &types.GetInstalledCertificateIdsRequestJson{
+				CertificateType: []types.GetCertificateIdUseEnumType{
+					types.GetCertificateIdUseEnumTypeCSMSRootCertificate,
+				},
+			},
+			response: &types.GetInstalledCertificateIdsResponseJson{
+				Status: types.GetInstalledCertificateStatusEnumTypeAccepted,
+				CertificateHashDataChain: []types.CertificateHashDataChainType{
+					{
+						CertificateHashData: types.CertificateHashDataType{
+							HashAlgorithm:  types.HashAlgorithmEnumTypeSHA256,
+							IssuerKeyHash:  "ABC123",
+							IssuerNameHash: "ABCDEF",
+							SerialNumber:   "12345678",
+						},
+						CertificateType: types.GetCertificateIdUseEnumTypeCSMSRootCertificate,
+					},
+				},
+			},
+		},
+		"GetReport": {
+			request: &types.GetReportRequestJson{
+				RequestId: 18,
+			},
+			response: &types.GetReportResponseJson{
+				Status: types.GenericDeviceModelStatusEnumTypeRejected,
+			},
+		},
 		"GetTransactionStatus": {
 			request: &types.GetTransactionStatusRequestJson{
 				TransactionId: makePtr(""),
@@ -322,6 +379,30 @@ func TestRoutingCallResults(t *testing.T) {
 			},
 			response: &types.RequestStopTransactionResponseJson{
 				Status: types.RequestStartStopStatusEnumTypeAccepted,
+			},
+		},
+		"Reset": {
+			request: &types.ResetRequestJson{
+				Type: types.ResetEnumTypeOnIdle,
+			},
+			response: &types.ResetResponseJson{
+				Status: types.ResetStatusEnumTypeScheduled,
+			},
+		},
+		"SetNetworkProfile": {
+			request: &types.SetNetworkProfileRequestJson{
+				ConfigurationSlot: 1,
+				ConnectionData: types.NetworkConnectionProfileType{
+					MessageTimeout:  30,
+					OcppCsmsUrl:     "https://cs.example.com/",
+					OcppInterface:   types.OCPPInterfaceEnumTypeWired0,
+					OcppTransport:   types.OCPPTransportEnumTypeJSON,
+					OcppVersion:     types.OCPPVersionEnumTypeOCPP20,
+					SecurityProfile: 2,
+				},
+			},
+			response: &types.SetNetworkProfileResponseJson{
+				Status: types.SetNetworkProfileStatusEnumTypeFailed,
 			},
 		},
 		"SetVariables": {
@@ -407,6 +488,26 @@ func TestCallMaker(t *testing.T) {
 		"ChangeAvailability": &types.ChangeAvailabilityRequestJson{
 			OperationalStatus: types.OperationalStatusEnumTypeInoperative,
 		},
+		"DeleteCertificate": &types.DeleteCertificateRequestJson{
+			CertificateHashData: types.CertificateHashDataType{
+				HashAlgorithm:  types.HashAlgorithmEnumTypeSHA256,
+				IssuerKeyHash:  "ABC123",
+				IssuerNameHash: "ABCDEF",
+				SerialNumber:   "12345678",
+			},
+		},
+		"GetBaseReport": &types.GetBaseReportRequestJson{
+			RequestId:  42,
+			ReportBase: types.ReportBaseEnumTypeSummaryInventory,
+		},
+		"GetInstalledCertificateIds": &types.GetInstalledCertificateIdsRequestJson{
+			CertificateType: []types.GetCertificateIdUseEnumType{
+				types.GetCertificateIdUseEnumTypeCSMSRootCertificate,
+			},
+		},
+		"GetReport": &types.GetReportRequestJson{
+			RequestId: 42,
+		},
 		"GetTransactionStatus": &types.GetTransactionStatusRequestJson{
 			TransactionId: makePtr(""),
 		},
@@ -435,6 +536,20 @@ func TestCallMaker(t *testing.T) {
 		},
 		"RequestStopTransaction": &types.RequestStopTransactionRequestJson{
 			TransactionId: "123abcde",
+		},
+		"Reset": &types.ResetRequestJson{
+			Type: types.ResetEnumTypeImmediate,
+		},
+		"SetNetworkProfile": &types.SetNetworkProfileRequestJson{
+			ConfigurationSlot: 1,
+			ConnectionData: types.NetworkConnectionProfileType{
+				MessageTimeout:  30,
+				OcppCsmsUrl:     "https://cs.example.com/",
+				OcppInterface:   types.OCPPInterfaceEnumTypeWired0,
+				OcppTransport:   types.OCPPTransportEnumTypeJSON,
+				OcppVersion:     types.OCPPVersionEnumTypeOCPP20,
+				SecurityProfile: 2,
+			},
 		},
 		"SetVariables": &types.SetVariablesRequestJson{
 			SetVariableData: []types.SetVariableDataType{
