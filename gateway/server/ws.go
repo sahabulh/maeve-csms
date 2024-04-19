@@ -9,16 +9,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"time"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.opentelemetry.io/otel/trace"
-	"io"
-	"net/http"
-	"net/url"
-	"time"
 
 	"github.com/eclipse/paho.golang/autopaho"
 	"github.com/eclipse/paho.golang/paho"
@@ -409,7 +410,7 @@ func checkCertificate(ctx context.Context, r *http.Request, orgNames []string, c
 	span.SetAttributes(
 		attribute.StringSlice("auth.organization", leafCertificate.Subject.Organization),
 		attribute.String("auth.common_name", leafCertificate.Subject.CommonName))
-
+	fmt.Printf("%v", orgNames)
 	for _, org := range leafCertificate.Subject.Organization {
 
 		if slices.Contains(orgNames, org) {
