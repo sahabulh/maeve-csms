@@ -7,6 +7,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"net/url"
+	"os"
+	"time"
+
 	"github.com/spf13/cobra"
 	"github.com/subnova/slog-exporter/slogtrace"
 	"github.com/thoughtworks/maeve-csms/gateway/registry"
@@ -21,9 +25,6 @@ import (
 	"golang.org/x/exp/slog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"net/url"
-	"os"
-	"time"
 )
 
 var (
@@ -221,7 +222,7 @@ func init() {
 		"A file that contains a PEM encoded private key to use as the TLS server key")
 	serveCmd.Flags().StringArrayVarP(&tlsTrustCert, "tls-trust-cert", "t", []string{},
 		"A file that contains a PEM encoded certificate to add to the TLS trust store")
-	serveCmd.Flags().StringSliceVarP(&orgNames, "org-name", "o", []string{"Thoughtworks"},
+	serveCmd.Flags().StringSliceVarP(&orgNames, "org-name", "o", []string{"Eonti, Inc"},
 		"A comma-separated list of organisation names that are valid in client certificates")
 	serveCmd.Flags().StringVarP(&managerApiAddr, "manager-api-addr", "r", "http://127.0.0.1:9410",
 		"The address of the CSMS manager API, e.g. http://127.0.0.1:9410")
