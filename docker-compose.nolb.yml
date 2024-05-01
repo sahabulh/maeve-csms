@@ -18,7 +18,7 @@ services:
         target: /mosquitto/config
         read_only: true
     ports:
-      - "1883:1883"
+      - "1884:1883"
       - "9000:9000"
     user: "10000:10000"
     healthcheck:

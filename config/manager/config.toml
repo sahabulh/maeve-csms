@@ -7,7 +7,7 @@ mqtt.urls = ["mqtt://mqtt:1883"]
 
 [ocpi]
 addr = ":9411"
-external_url = "http://manager:9411"
+external_url = "http://lb:9411"
 country_code = "GB"
 party_id = "TWK"
 
@@ -20,7 +20,7 @@ type = "ocsp"
 
 [contract_cert_validator.ocsp.root_certs]
 type = "file"
-file.files = ["/certificates/MORootCACert.pem"]
+file.files = ["/certificates/root-MO-cert.pem"]
 
 [contract_cert_provider]
 type = "opcp"

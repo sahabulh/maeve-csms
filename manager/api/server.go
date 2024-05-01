@@ -47,14 +47,9 @@ func (s *Server) RegisterChargeStation(w http.ResponseWriter, r *http.Request, c
 	if req.Base64SHA256Password != nil {
 		pwd = *req.Base64SHA256Password
 	}
-	invalidUsernameAllowed := false
-	if req.InvalidUsernameAllowed != nil {
-		invalidUsernameAllowed = *req.InvalidUsernameAllowed
-	}
 	err := s.store.SetChargeStationAuth(r.Context(), csId, &store.ChargeStationAuth{
-		SecurityProfile:        store.SecurityProfile(req.SecurityProfile),
-		Base64SHA256Password:   pwd,
-		InvalidUsernameAllowed: invalidUsernameAllowed,
+		SecurityProfile:      store.SecurityProfile(req.SecurityProfile),
+		Base64SHA256Password: pwd,
 	})
 	if err != nil {
 		_ = render.Render(w, r, ErrInternalError(err))
@@ -143,7 +138,6 @@ func (s *Server) LookupChargeStationAuth(w http.ResponseWriter, r *http.Request,
 	if auth.Base64SHA256Password != "" {
 		resp.Base64SHA256Password = &auth.Base64SHA256Password
 	}
-	resp.InvalidUsernameAllowed = &auth.InvalidUsernameAllowed
 
 	_ = render.Render(w, r, resp)
 }

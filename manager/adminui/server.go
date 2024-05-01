@@ -29,7 +29,7 @@ var (
 	res embed.FS
 )
 
-func NewServer(host string, wsPort, wssPort int, orgName string, engine store.Engine, certificateProvider services.ChargeStationCertificateProvider) chi.Router {
+func NewServer(externalAddr, orgName string, engine store.Engine, certificateProvider services.ChargeStationCertificateProvider) chi.Router {
 	r := chi.NewRouter()
 
 	templates := template.Must(template.ParseFS(res, "templates/*.gohtml"))
@@ -62,7 +62,6 @@ func NewServer(host string, wsPort, wssPort int, orgName string, engine store.En
 
 		csId := r.PostFormValue("csid")
 		auth := r.PostFormValue("auth")
-		invalidUsername := r.PostFormValue("invalidUsername")
 
 		if csId == "" || auth == "" {
 			slog.Error("missing form parameters")
@@ -80,22 +79,17 @@ func NewServer(host string, wsPort, wssPort int, orgName string, engine store.En
 				_ = templates.ExecuteTemplate(w, "error.gohtml", nil)
 				return
 			}
-			err = registerChargeStation(r.Context(), engine, csId, 0, password, invalidUsername == "on")
+			err = registerChargeStation(r.Context(), engine, csId, 0, password)
 			if err != nil {
 				slog.Error("registering charge station", "err", err)
 				_ = templates.ExecuteTemplate(w, "error.gohtml", nil)
 				return
 			}
-			optionalPort := ""
-			if wsPort != 80 {
-				optionalPort = fmt.Sprintf(":%d", wsPort)
-			}
 			data = map[string]string{
-				"csid":            csId,
-				"auth":            auth,
-				"url":             fmt.Sprintf("ws://%s%s/ws/%s", host, optionalPort, csId),
-				"password":        password,
-				"invalidUsername": invalidUsername,
+				"csid":     csId,
+				"auth":     auth,
+				"url":      fmt.Sprintf("ws://%s/ws/%s", externalAddr, csId),
+				"password": password,
 			}
 		case "basic":
 			password, err := createPassword()
@@ -104,22 +98,17 @@ func NewServer(host string, wsPort, wssPort int, orgName string, engine store.En
 				_ = templates.ExecuteTemplate(w, "error.gohtml", nil)
 				return
 			}
-			err = registerChargeStation(r.Context(), engine, csId, 1, password, invalidUsername == "on")
+			err = registerChargeStation(r.Context(), engine, csId, 1, password)
 			if err != nil {
 				slog.Error("registering charge station", "err", err)
 				_ = templates.ExecuteTemplate(w, "error.gohtml", nil)
 				return
 			}
-			optionalPort := ""
-			if wsPort != 443 {
-				optionalPort = fmt.Sprintf(":%d", wssPort)
-			}
 			data = map[string]string{
-				"csid":            csId,
-				"auth":            auth,
-				"url":             fmt.Sprintf("wss://%s%s/ws/%s", host, optionalPort, csId),
-				"password":        password,
-				"invalidUsername": invalidUsername,
+				"csid":     csId,
+				"auth":     auth,
+				"url":      fmt.Sprintf("wss://%s/ws/%s", externalAddr, csId),
+				"password": password,
 			}
 		case "mtls":
 			clientKey, clientCert, err := createSignedKeyPair(r.Context(), csId, orgName, certificateProvider)
@@ -128,7 +117,7 @@ func NewServer(host string, wsPort, wssPort int, orgName string, engine store.En
 				_ = templates.ExecuteTemplate(w, "error.gohtml", nil)
 				return
 			}
-			err = registerChargeStation(r.Context(), engine, csId, 2, "", false)
+			err = registerChargeStation(r.Context(), engine, csId, 2, "")
 			if err != nil {
 				slog.Error("registering charge station", "err", err)
 				_ = templates.ExecuteTemplate(w, "error.gohtml", nil)
@@ -137,7 +126,7 @@ func NewServer(host string, wsPort, wssPort int, orgName string, engine store.En
 			data = map[string]string{
 				"csid":       csId,
 				"auth":       auth,
-				"url":        fmt.Sprintf("wss://%s/ws/%s", host, csId),
+				"url":        fmt.Sprintf("wss://%s/ws/%s", externalAddr, csId),
 				"clientCert": clientCert,
 				"clientKey":  clientKey,
 			}
@@ -265,7 +254,7 @@ func createSignedKeyPair(ctx context.Context, csId string, orgName string, certi
 	return string(pemKey), chain, nil
 }
 
-func registerChargeStation(ctx context.Context, engine store.Engine, csId string, scheme int, password string, invalidUsername bool) error {
+func registerChargeStation(ctx context.Context, engine store.Engine, csId string, scheme int, password string) error {
 	var profile store.SecurityProfile
 
 	switch scheme {
@@ -286,9 +275,8 @@ func registerChargeStation(ctx context.Context, engine store.Engine, csId string
 	}
 
 	err := engine.SetChargeStationAuth(ctx, csId, &store.ChargeStationAuth{
-		SecurityProfile:        profile,
-		Base64SHA256Password:   b64sha256,
-		InvalidUsernameAllowed: invalidUsername,
+		SecurityProfile:      profile,
+		Base64SHA256Password: b64sha256,
 	})
 	if err != nil {
 		return err

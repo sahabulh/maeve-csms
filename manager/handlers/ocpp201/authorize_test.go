@@ -12,7 +12,7 @@ import (
 	"github.com/thoughtworks/maeve-csms/manager/services"
 	"github.com/thoughtworks/maeve-csms/manager/store"
 	"github.com/thoughtworks/maeve-csms/manager/store/inmemory"
-	clockutil "k8s.io/utils/clock"
+	"k8s.io/utils/clock"
 	"testing"
 	"time"
 )
@@ -20,7 +20,7 @@ import (
 type mockCertValidationService struct {
 }
 
-func (m mockCertValidationService) ValidatePEMCertificateChain(_ context.Context, certificate []byte, _ string) (*string, error) {
+func (m mockCertValidationService) ValidatePEMCertificateChain(ctx context.Context, certificate []byte, eMAID string) (*string, error) {
 	switch string(certificate) {
 	case "invalidCertChain":
 		return nil, services.ValidationErrorCertChain
@@ -34,7 +34,7 @@ func (m mockCertValidationService) ValidatePEMCertificateChain(_ context.Context
 	return nil, nil
 }
 
-func (m mockCertValidationService) ValidateHashedCertificateChain(_ context.Context, ocspRequestData []types.OCSPRequestDataType) (*string, error) {
+func (m mockCertValidationService) ValidateHashedCertificateChain(ctx context.Context, ocspRequestData []types.OCSPRequestDataType) (*string, error) {
 	if len(ocspRequestData) > 0 {
 		switch ocspRequestData[0].SerialNumber {
 		case "invalidCertChain":
@@ -60,7 +60,7 @@ func setupTokenStore(tokenStore store.TokenStore) error {
 		ContractId:  "GBTWK012345678V",
 		Issuer:      "Thoughtworks",
 		Valid:       true,
-		CacheMode:   "ALWAYS",
+		CacheMode:   "NEVER",
 		LastUpdated: time.Now().Format(time.RFC3339),
 	})
 	if err != nil {
@@ -74,7 +74,7 @@ func setupTokenStore(tokenStore store.TokenStore) error {
 		ContractId:  "GBTWK123456789B",
 		Issuer:      "Thoughtworks",
 		Valid:       true,
-		CacheMode:   "ALWAYS",
+		CacheMode:   "NEVER",
 		LastUpdated: time.Now().Format(time.RFC3339),
 	})
 	if err != nil {
@@ -84,18 +84,12 @@ func setupTokenStore(tokenStore store.TokenStore) error {
 }
 
 func TestAuthorizeKnownRfidCard(t *testing.T) {
-	clock := clockutil.RealClock{}
-	engine := inmemory.NewStore(clock)
+	engine := inmemory.NewStore(clock.RealClock{})
 	err := setupTokenStore(engine)
 	require.NoError(t, err)
-	tokenAuthService := &services.OcppTokenAuthService{
-		Clock:      clock,
-		TokenStore: engine,
-	}
 
 	ah := handlers.AuthorizeHandler{
-		TokenAuthService:             tokenAuthService,
-		CertificateValidationService: mockCertValidationService{},
+		TokenStore: engine,
 	}
 
 	req := &types.AuthorizeRequestJson{
@@ -118,18 +112,12 @@ func TestAuthorizeKnownRfidCard(t *testing.T) {
 }
 
 func TestAuthorizeWithUnknownRfidCard(t *testing.T) {
-	clock := clockutil.RealClock{}
-	engine := inmemory.NewStore(clock)
+	engine := inmemory.NewStore(clock.RealClock{})
 	err := setupTokenStore(engine)
 	require.NoError(t, err)
-	tokenAuthService := &services.OcppTokenAuthService{
-		Clock:      clock,
-		TokenStore: engine,
-	}
 
 	ah := handlers.AuthorizeHandler{
-		TokenAuthService:             tokenAuthService,
-		CertificateValidationService: mockCertValidationService{},
+		TokenStore: engine,
 	}
 
 	req := &types.AuthorizeRequestJson{
@@ -152,17 +140,12 @@ func TestAuthorizeWithUnknownRfidCard(t *testing.T) {
 }
 
 func TestAuthorizeWithEmaidAndCertificateChain(t *testing.T) {
-	clock := clockutil.RealClock{}
-	engine := inmemory.NewStore(clock)
+	engine := inmemory.NewStore(clock.RealClock{})
 	err := setupTokenStore(engine)
 	require.NoError(t, err)
-	tokenAuthService := &services.OcppTokenAuthService{
-		Clock:      clock,
-		TokenStore: engine,
-	}
 
 	ah := handlers.AuthorizeHandler{
-		TokenAuthService:             tokenAuthService,
+		TokenStore:                   engine,
 		CertificateValidationService: mockCertValidationService{},
 	}
 
@@ -190,17 +173,12 @@ func TestAuthorizeWithEmaidAndCertificateChain(t *testing.T) {
 }
 
 func TestAuthorizeWithEmaidAndInvalidCertificateChain(t *testing.T) {
-	clock := clockutil.RealClock{}
-	engine := inmemory.NewStore(clock)
+	engine := inmemory.NewStore(clock.RealClock{})
 	err := setupTokenStore(engine)
 	require.NoError(t, err)
-	tokenAuthService := &services.OcppTokenAuthService{
-		Clock:      clock,
-		TokenStore: engine,
-	}
 
 	ah := handlers.AuthorizeHandler{
-		TokenAuthService:             tokenAuthService,
+		TokenStore:                   engine,
 		CertificateValidationService: mockCertValidationService{},
 	}
 
@@ -239,17 +217,12 @@ func TestAuthorizeWithEmaidAndInvalidCertificateChain(t *testing.T) {
 }
 
 func TestAuthorizeWithEmaidAndCertificateHashes(t *testing.T) {
-	clock := clockutil.RealClock{}
-	engine := inmemory.NewStore(clock)
+	engine := inmemory.NewStore(clock.RealClock{})
 	err := setupTokenStore(engine)
 	require.NoError(t, err)
-	tokenAuthService := &services.OcppTokenAuthService{
-		Clock:      clock,
-		TokenStore: engine,
-	}
 
 	ah := handlers.AuthorizeHandler{
-		TokenAuthService:             tokenAuthService,
+		TokenStore:                   engine,
 		CertificateValidationService: mockCertValidationService{},
 	}
 
@@ -280,17 +253,12 @@ func TestAuthorizeWithEmaidAndCertificateHashes(t *testing.T) {
 }
 
 func TestAuthorizeWithEmaidAndInvalidCertificateHashes(t *testing.T) {
-	clock := clockutil.RealClock{}
-	engine := inmemory.NewStore(clock)
+	engine := inmemory.NewStore(clock.RealClock{})
 	err := setupTokenStore(engine)
 	require.NoError(t, err)
-	tokenAuthService := &services.OcppTokenAuthService{
-		Clock:      clock,
-		TokenStore: engine,
-	}
 
 	ah := handlers.AuthorizeHandler{
-		TokenAuthService:             tokenAuthService,
+		TokenStore:                   engine,
 		CertificateValidationService: mockCertValidationService{},
 	}
 
@@ -333,17 +301,12 @@ func TestAuthorizeWithEmaidAndInvalidCertificateHashes(t *testing.T) {
 }
 
 func TestAuthorizeWithEmaidAndNoCertificateData(t *testing.T) {
-	clock := clockutil.RealClock{}
-	engine := inmemory.NewStore(clock)
+	engine := inmemory.NewStore(clock.RealClock{})
 	err := setupTokenStore(engine)
 	require.NoError(t, err)
-	tokenAuthService := &services.OcppTokenAuthService{
-		Clock:      clock,
-		TokenStore: engine,
-	}
 
 	ah := handlers.AuthorizeHandler{
-		TokenAuthService:             tokenAuthService,
+		TokenStore:                   engine,
 		CertificateValidationService: mockCertValidationService{},
 	}
 

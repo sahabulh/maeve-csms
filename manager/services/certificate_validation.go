@@ -123,15 +123,25 @@ func (o *OnlineCertificateValidationService) validatePEMCertificateChain(certifi
 		return errors.New("no certificates in chain")
 	}
 
+	// fmt.Println("Leaf cert:")
+	// fmt.Println(certificateChain[0].Subject)
+	// fmt.Println(certificateChain[0].Issuer)
+
+	// fmt.Println("SubCA cert:")
 	intermediates := x509.NewCertPool()
 	if len(certificateChain) > 1 {
 		for _, cert := range certificateChain[1:] {
+			// fmt.Println(cert.Subject)
+			// fmt.Println(cert.Issuer)
 			intermediates.AddCert(cert)
 		}
 	}
 
 	trustedCerts := x509.NewCertPool()
+	// fmt.Println("Root certs:")
 	for _, cert := range rootCertificates {
+		// fmt.Println(cert.Subject)
+		// fmt.Println(cert.Issuer)
 		trustedCerts.AddCert(cert)
 	}
 

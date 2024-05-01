@@ -29,11 +29,9 @@ type BaseConfig struct {
 // read from the TOML file will overlay this configuration.
 var DefaultConfig = BaseConfig{
 	Api: ApiSettingsConfig{
-		Addr:    "localhost:9410",
-		Host:    "localhost",
-		WsPort:  80,
-		WssPort: 443,
-		OrgName: "Thoughtworks",
+		Addr:         "localhost:9410",
+		ExternalAddr: "localhost:9410",
+		OrgName:      "Thoughtworks",
 	},
 	Transport: TransportConfig{
 		Type: "mqtt",

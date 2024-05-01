@@ -17,11 +17,9 @@ func TestParseConfig(t *testing.T) {
 
 	want := &config.BaseConfig{
 		Api: config.ApiSettingsConfig{
-			Addr:    ":9410",
-			Host:    "example.com",
-			WsPort:  80,
-			WssPort: 443,
-			OrgName: "Example",
+			Addr:         ":9410",
+			ExternalAddr: "https://example.com/",
+			OrgName:      "Example",
 		},
 		Transport: config.TransportConfig{
 			Type: "mqtt",
