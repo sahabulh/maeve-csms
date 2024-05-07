@@ -102,6 +102,7 @@ func (o *OnlineCertificateValidationService) ValidateHashedCertificateChain(ctx 
 		var ocspRequest []byte
 		ocspRequest, err = o.createOCSPRequestFromHashData(requestData.IssuerNameHash, requestData.IssuerKeyHash,
 			requestData.SerialNumber, string(requestData.HashAlgorithm))
+		fmt.Printf("Issuer Name Hash: %s, Serial: %s\n", requestData.IssuerNameHash, requestData.SerialNumber)
 		if err != nil {
 			return nil, err
 		}
