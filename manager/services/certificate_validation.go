@@ -11,12 +11,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/thoughtworks/maeve-csms/manager/ocpp/ocpp201"
-	"golang.org/x/crypto/ocsp"
-	"golang.org/x/exp/slog"
 	"io"
 	"math/big"
 	"net/http"
+
+	"github.com/thoughtworks/maeve-csms/manager/ocpp/ocpp201"
+	"golang.org/x/crypto/ocsp"
+	"golang.org/x/exp/slog"
 )
 
 // OCSPError is an error returned by the OCSP server in response to a check
@@ -226,7 +227,7 @@ func (o *OnlineCertificateValidationService) performOCSPCheck(ctx context.Contex
 		if err == nil {
 			return ocspResponse, nil
 		}
-		var ocspError *OCSPError
+		var ocspError OCSPError
 		if errors.As(err, &ocspError) {
 			return ocspResponse, fmt.Errorf("ocsp check status: %d: %w", ocspError, ValidationErrorCertRevoked)
 		}
