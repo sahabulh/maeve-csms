@@ -98,6 +98,8 @@ services:
       timeout: 10s
       retries: 3
     user: "${UID}:${GID}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   firestore:
     image: google/cloud-sdk
