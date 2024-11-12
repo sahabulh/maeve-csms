@@ -1,3 +1,5 @@
+version: "3"
+
 networks:
   default:
     name: maeve-csms
@@ -16,7 +18,7 @@ services:
         target: /mosquitto/config
         read_only: true
     ports:
-      - "1883:1883"
+      - "1884:1883"
       - "9000:9000"
     user: "10000:10000"
     healthcheck:
@@ -24,25 +26,6 @@ services:
       interval: 10s
       timeout: 10s
       retries: 3
-
-  lb:
-    image: envoyproxy/envoy:v1.26-latest
-    command: ["-c", "/config/envoy.yaml"]
-    volumes:
-      - type: bind
-        source: ./config/envoy
-        target: /config
-        read_only: true
-    depends_on:
-      manager:
-        condition: service_healthy
-      gateway:
-        condition: service_healthy
-    ports:
-      - "80:80"
-      - "443:443"
-      - "9410:9410"
-      - "9411:9411"
 
   gateway:
     build:
@@ -70,10 +53,10 @@ services:
       - "mqtt://mqtt:1883"
       - "--manager-api-addr"
       - "http://manager:9410"
-    expose:
-      - "9310"
-      - "9311"
-      - "9312"
+    ports:
+      - "9310:9310"
+      - "9311:9311"
+      - "9312:9312"
     volumes:
       - type: bind
         source: ./config/certificates
@@ -108,15 +91,18 @@ services:
         source: ./config/manager
         target: /config
         read_only: true
-    expose:
-      - "9410"
-      - "9411"
+    ports:
+      - "9410:9410"
+      - "9411:9411"
     healthcheck:
       test: ["CMD", "/usr/bin/curl", "-s", "--fail", "http://localhost:9410/health"]
       interval: 10s
       timeout: 10s
       retries: 3
     user: "10000:10000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "csms.server:host-gateway"
 
   firestore:
     image: google/cloud-sdk
@@ -131,16 +117,12 @@ services:
 
   grafana:
     image: grafana/grafana:7.5.7
-    profiles:
-      - perf
     ports:
       - 3000:3000
     restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:v2.45.1
-    profiles:
-      - perf
     ports:
       - "9090:9090"
     volumes:

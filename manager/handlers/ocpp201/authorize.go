@@ -11,18 +11,22 @@ import (
 	"github.com/thoughtworks/maeve-csms/manager/ocpp"
 	types "github.com/thoughtworks/maeve-csms/manager/ocpp/ocpp201"
 	"github.com/thoughtworks/maeve-csms/manager/services"
+	"github.com/thoughtworks/maeve-csms/manager/store"
 )
 
 type AuthorizeHandler struct {
-	TokenAuthService             services.TokenAuthService
+	TokenStore                   store.TokenStore
 	CertificateValidationService services.CertificateValidationService
 }
 
-func (a AuthorizeHandler) HandleCall(ctx context.Context, _ string, request ocpp.Request) (ocpp.Response, error) {
+func (a AuthorizeHandler) HandleCall(ctx context.Context, chargeStationId string, request ocpp.Request) (ocpp.Response, error) {
 	span := trace.SpanFromContext(ctx)
 
 	req := request.(*types.AuthorizeRequestJson)
 
+	span.SetAttributes(
+		attribute.String("authorize.token", req.IdToken.IdToken),
+		attribute.String("authorize.token_type", string(req.IdToken.Type)))
 	if req.Certificate != nil {
 		span.SetAttributes(attribute.String("authorize.certificate", "chain"))
 	} else if req.Iso15118CertificateHashData != nil {
@@ -31,13 +35,20 @@ func (a AuthorizeHandler) HandleCall(ctx context.Context, _ string, request ocpp
 		span.SetAttributes(attribute.String("authorize.certificate", "none"))
 	}
 
-	idTokenInfo := a.TokenAuthService.Authorize(ctx, req.IdToken)
+	status := types.AuthorizationStatusEnumTypeUnknown
+	tok, err := a.TokenStore.LookupToken(ctx, req.IdToken.IdToken)
+	if err != nil {
+		return nil, err
+	}
+	if tok != nil {
+		status = types.AuthorizationStatusEnumTypeAccepted
+	}
 
 	var certificateStatus *types.AuthorizeCertificateStatusEnumType
-	if idTokenInfo.Status == types.AuthorizationStatusEnumTypeAccepted {
+	if status == types.AuthorizationStatusEnumTypeAccepted {
 		if req.Certificate != nil {
-			_, err := a.CertificateValidationService.ValidatePEMCertificateChain(ctx, []byte(*req.Certificate), req.IdToken.IdToken)
-			idTokenInfo.Status, certificateStatus = handleCertificateValidationError(err)
+			_, err = a.CertificateValidationService.ValidatePEMCertificateChain(ctx, []byte(*req.Certificate), req.IdToken.IdToken)
+			status, certificateStatus = handleCertificateValidationError(err)
 			if err != nil {
 				span.SetAttributes(attribute.String("authorize.cert_error", err.Error()))
 			}
@@ -45,14 +56,14 @@ func (a AuthorizeHandler) HandleCall(ctx context.Context, _ string, request ocpp
 
 		if req.Iso15118CertificateHashData != nil {
 			_, err := a.CertificateValidationService.ValidateHashedCertificateChain(ctx, *req.Iso15118CertificateHashData)
-			idTokenInfo.Status, certificateStatus = handleCertificateValidationError(err)
+			status, certificateStatus = handleCertificateValidationError(err)
 			if err != nil {
 				span.SetAttributes(attribute.String("authorize.cert_error", err.Error()))
 			}
 		}
 	}
 
-	if idTokenInfo.Status != types.AuthorizationStatusEnumTypeAccepted {
+	if status != types.AuthorizationStatusEnumTypeAccepted {
 		var certStatus types.AuthorizeCertificateStatusEnumType
 		if certificateStatus != nil {
 			certStatus = *certificateStatus
@@ -63,10 +74,12 @@ func (a AuthorizeHandler) HandleCall(ctx context.Context, _ string, request ocpp
 		span.SetAttributes(attribute.String("authorize.cert_status", string(certStatus)))
 	}
 
-	span.SetAttributes(attribute.String("request.status", string(idTokenInfo.Status)))
+	span.SetAttributes(attribute.String("request.status", string(status)))
 
 	return &types.AuthorizeResponseJson{
-		IdTokenInfo:       idTokenInfo,
+		IdTokenInfo: types.IdTokenInfoType{
+			Status: status,
+		},
 		CertificateStatus: certificateStatus,
 	}, nil
 }

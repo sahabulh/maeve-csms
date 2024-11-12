@@ -6,16 +6,16 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/thoughtworks/maeve-csms/manager/handlers"
 	"github.com/thoughtworks/maeve-csms/manager/handlers/ocpp201"
 	types "github.com/thoughtworks/maeve-csms/manager/ocpp/ocpp201"
-	"github.com/thoughtworks/maeve-csms/manager/testutil"
 	"testing"
 )
 
 func TestLogStatusNotification(t *testing.T) {
 	handler := ocpp201.LogStatusNotificationHandler{}
 
-	tracer, exporter := testutil.GetTracer()
+	tracer, exporter := handlers.GetTracer()
 
 	ctx := context.Background()
 
@@ -33,7 +33,7 @@ func TestLogStatusNotification(t *testing.T) {
 		assert.Equal(t, &types.LogStatusNotificationResponseJson{}, resp)
 	}()
 
-	testutil.AssertSpan(t, &exporter.GetSpans()[0], "test", map[string]any{
+	handlers.AssertSpan(t, &exporter.GetSpans()[0], "test", map[string]any{
 		"log_status.status": "Uploaded",
 	})
 }
@@ -41,7 +41,7 @@ func TestLogStatusNotification(t *testing.T) {
 func TestLogStatusNotificationWithRequestId(t *testing.T) {
 	handler := ocpp201.LogStatusNotificationHandler{}
 
-	tracer, exporter := testutil.GetTracer()
+	tracer, exporter := handlers.GetTracer()
 
 	ctx := context.Background()
 
@@ -61,7 +61,7 @@ func TestLogStatusNotificationWithRequestId(t *testing.T) {
 		assert.Equal(t, &types.LogStatusNotificationResponseJson{}, resp)
 	}()
 
-	testutil.AssertSpan(t, &exporter.GetSpans()[0], "test", map[string]any{
+	handlers.AssertSpan(t, &exporter.GetSpans()[0], "test", map[string]any{
 		"log_status.status":     "Idle",
 		"log_status.request_id": 999,
 	})

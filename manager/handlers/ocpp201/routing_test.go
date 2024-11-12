@@ -16,26 +16,15 @@ import (
 	"github.com/thoughtworks/maeve-csms/manager/services"
 	"github.com/thoughtworks/maeve-csms/manager/store"
 	"github.com/thoughtworks/maeve-csms/manager/store/inmemory"
-	"github.com/thoughtworks/maeve-csms/manager/testutil"
 	"github.com/thoughtworks/maeve-csms/manager/transport"
-	"go.opentelemetry.io/otel/codes"
 	clockTest "k8s.io/utils/clock/testing"
 	"testing"
 	"time"
 )
 
-type fakeEmitter struct {
-	Called          bool
-	OcppVersion     transport.OcppVersion
-	ChargeStationId string
-	Message         *transport.Message
-}
+type fakeEmitter struct{}
 
-func (f *fakeEmitter) Emit(ctx context.Context, ocppVersion transport.OcppVersion, chargeStationId string, message *transport.Message) error {
-	f.Called = true
-	f.OcppVersion = ocppVersion
-	f.ChargeStationId = chargeStationId
-	f.Message = message
+func (f fakeEmitter) Emit(ctx context.Context, ocppVersion transport.OcppVersion, chargeStationId string, message *transport.Message) error {
 	return nil
 }
 
@@ -139,12 +128,6 @@ func TestRoutingCalls(t *testing.T) {
 				},
 			},
 		},
-		"NotifyReport": &types.NotifyReportRequestJson{
-			GeneratedAt: "2024-03-18T17:50:00.000Z",
-			RequestId:   33,
-			SeqNo:       1,
-			Tbc:         false,
-		},
 		"SecurityEventNotification": &types.SecurityEventNotificationRequestJson{
 			Timestamp: "2023-06-15T15:05:00+01:00",
 			Type:      "SettingSystemTime",
@@ -204,17 +187,8 @@ func TestRoutingCalls(t *testing.T) {
 				MessageId:      messageId.String(),
 				RequestPayload: reqBytes,
 			}
-
-			tracer, exporter := testutil.GetTracer()
-
-			func() {
-				ctx, span := tracer.Start(context.TODO(), "test")
-				defer span.End()
-				router.Handle(ctx, "cs001", &msg)
-			}()
-
-			require.Greater(t, len(exporter.GetSpans()), 0)
-			assert.Equal(t, codes.Ok, exporter.GetSpans()[0].Status.Code)
+			err = router.Route(context.TODO(), "cs001", msg)
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -256,114 +230,6 @@ func TestRoutingCallResults(t *testing.T) {
 				Status: types.CertificateSignedStatusEnumTypeRejected,
 			},
 		},
-		"ChangeAvailability": {
-			request: &types.ChangeAvailabilityRequestJson{
-				OperationalStatus: types.OperationalStatusEnumTypeOperative,
-			},
-			response: &types.ChangeAvailabilityResponseJson{
-				Status: types.ChangeAvailabilityStatusEnumTypeAccepted,
-			},
-		},
-		"ClearCache": {
-			request: &types.ClearCacheRequestJson{},
-			response: &types.ClearCacheResponseJson{
-				Status: types.ClearCacheStatusEnumTypeAccepted,
-			},
-		},
-		"DeleteCertificate": {
-			request: &types.DeleteCertificateRequestJson{
-				CertificateHashData: types.CertificateHashDataType{
-					HashAlgorithm:  types.HashAlgorithmEnumTypeSHA256,
-					IssuerKeyHash:  "ABC123",
-					IssuerNameHash: "ABCDEF",
-					SerialNumber:   "1234578",
-				},
-			},
-			response: &types.DeleteCertificateResponseJson{
-				Status: types.DeleteCertificateStatusEnumTypeAccepted,
-			},
-		},
-		"GetBaseReport": {
-			request: &types.GetBaseReportRequestJson{
-				RequestId:  99,
-				ReportBase: types.ReportBaseEnumTypeConfigurationInventory,
-			},
-			response: &types.GetBaseReportResponseJson{
-				Status: types.GenericDeviceModelStatusEnumTypeEmptyResultSet,
-			},
-		},
-		"GetInstalledCertificateIds": {
-			request: &types.GetInstalledCertificateIdsRequestJson{
-				CertificateType: []types.GetCertificateIdUseEnumType{
-					types.GetCertificateIdUseEnumTypeCSMSRootCertificate,
-				},
-			},
-			response: &types.GetInstalledCertificateIdsResponseJson{
-				Status: types.GetInstalledCertificateStatusEnumTypeAccepted,
-				CertificateHashDataChain: []types.CertificateHashDataChainType{
-					{
-						CertificateHashData: types.CertificateHashDataType{
-							HashAlgorithm:  types.HashAlgorithmEnumTypeSHA256,
-							IssuerKeyHash:  "ABC123",
-							IssuerNameHash: "ABCDEF",
-							SerialNumber:   "12345678",
-						},
-						CertificateType: types.GetCertificateIdUseEnumTypeCSMSRootCertificate,
-					},
-				},
-			},
-		},
-		"GetLocalListVersion": {
-			request: &types.GetLocalListVersionRequestJson{},
-			response: &types.GetLocalListVersionResponseJson{
-				VersionNumber: 17,
-			},
-		},
-		"GetReport": {
-			request: &types.GetReportRequestJson{
-				RequestId: 18,
-			},
-			response: &types.GetReportResponseJson{
-				Status: types.GenericDeviceModelStatusEnumTypeRejected,
-			},
-		},
-		"GetTransactionStatus": {
-			request: &types.GetTransactionStatusRequestJson{
-				TransactionId: makePtr(""),
-			},
-			response: &types.GetTransactionStatusResponseJson{
-				MessagesInQueue:  true,
-				OngoingIndicator: makePtr(false),
-			},
-		},
-		"GetVariables": {
-			request: &types.GetVariablesRequestJson{
-				GetVariableData: []types.GetVariableDataType{
-					{
-						Component: types.ComponentType{
-							Name: "SomeCtrlr",
-						},
-						Variable: types.VariableType{
-							Name: "MyVar",
-						},
-					},
-				},
-			},
-			response: &types.GetVariablesResponseJson{
-				GetVariableResult: []types.GetVariableResultType{
-					{
-						Component: types.ComponentType{
-							Name: "SomeCtrlr",
-						},
-						Variable: types.VariableType{
-							Name: "MyVar",
-						},
-						AttributeValue:  makePtr("Val"),
-						AttributeStatus: types.GetVariableStatusEnumTypeAccepted,
-					},
-				},
-			},
-		},
 		"InstallCertificate": {
 			request: &types.InstallCertificateRequestJson{
 				Certificate:     string(pemBytes),
@@ -371,67 +237,6 @@ func TestRoutingCallResults(t *testing.T) {
 			},
 			response: &types.InstallCertificateResponseJson{
 				Status: types.InstallCertificateStatusEnumTypeAccepted,
-			},
-		},
-		"RequestStartTransaction": {
-			request: &types.RequestStartTransactionRequestJson{
-				IdToken: types.IdTokenType{
-					Type:    types.IdTokenEnumTypeISO14443,
-					IdToken: "DEADBEEF",
-				},
-				RemoteStartId: 12345,
-			},
-			response: &types.RequestStartTransactionResponseJson{
-				Status: types.RequestStartStopStatusEnumTypeAccepted,
-			},
-		},
-		"RequestStopTransaction": {
-			request: &types.RequestStopTransactionRequestJson{
-				TransactionId: "abc12345",
-			},
-			response: &types.RequestStopTransactionResponseJson{
-				Status: types.RequestStartStopStatusEnumTypeAccepted,
-			},
-		},
-		"Reset": {
-			request: &types.ResetRequestJson{
-				Type: types.ResetEnumTypeOnIdle,
-			},
-			response: &types.ResetResponseJson{
-				Status: types.ResetStatusEnumTypeScheduled,
-			},
-		},
-		"SendLocalList": {
-			request: &types.SendLocalListRequestJson{
-				LocalAuthorizationList: []types.AuthorizationData{
-					{
-						IdToken: types.IdTokenType{
-							Type:    types.IdTokenEnumTypeEMAID,
-							IdToken: "XYZ12345",
-						},
-					},
-				},
-				VersionNumber: 22,
-				UpdateType:    types.UpdateEnumTypeFull,
-			},
-			response: &types.SendLocalListResponseJson{
-				Status: types.SendLocalListStatusEnumTypeAccepted,
-			},
-		},
-		"SetNetworkProfile": {
-			request: &types.SetNetworkProfileRequestJson{
-				ConfigurationSlot: 1,
-				ConnectionData: types.NetworkConnectionProfileType{
-					MessageTimeout:  30,
-					OcppCsmsUrl:     "https://cs.example.com/",
-					OcppInterface:   types.OCPPInterfaceEnumTypeWired0,
-					OcppTransport:   types.OCPPTransportEnumTypeJSON,
-					OcppVersion:     types.OCPPVersionEnumTypeOCPP20,
-					SecurityProfile: 2,
-				},
-			},
-			response: &types.SetNetworkProfileResponseJson{
-				Status: types.SetNetworkProfileStatusEnumTypeFailed,
 			},
 		},
 		"SetVariables": {
@@ -491,139 +296,8 @@ func TestRoutingCallResults(t *testing.T) {
 				ResponsePayload: respBytes,
 			}
 
-			tracer, exporter := testutil.GetTracer()
-
-			func() {
-				ctx, span := tracer.Start(context.TODO(), "test")
-				defer span.End()
-				router.Handle(ctx, "cs001", &msg)
-			}()
-
-			require.Greater(t, len(exporter.GetSpans()), 0)
-			assert.Equal(t, codes.Ok, exporter.GetSpans()[0].Status.Code)
-		})
-	}
-}
-
-func TestCallMaker(t *testing.T) {
-	emitter := &fakeEmitter{}
-	callMaker := ocpp201.NewCallMaker(emitter)
-
-	inputMessages := map[string]ocpp.Request{
-		"CertificateSigned": &types.CertificateSignedRequestJson{
-			CertificateChain: "",
-			CertificateType:  makePtr(types.CertificateSigningUseEnumTypeChargingStationCertificate),
-		},
-		"ChangeAvailability": &types.ChangeAvailabilityRequestJson{
-			OperationalStatus: types.OperationalStatusEnumTypeInoperative,
-		},
-		"ClearCache": &types.ClearCacheRequestJson{},
-		"DeleteCertificate": &types.DeleteCertificateRequestJson{
-			CertificateHashData: types.CertificateHashDataType{
-				HashAlgorithm:  types.HashAlgorithmEnumTypeSHA256,
-				IssuerKeyHash:  "ABC123",
-				IssuerNameHash: "ABCDEF",
-				SerialNumber:   "12345678",
-			},
-		},
-		"GetBaseReport": &types.GetBaseReportRequestJson{
-			RequestId:  42,
-			ReportBase: types.ReportBaseEnumTypeSummaryInventory,
-		},
-		"GetInstalledCertificateIds": &types.GetInstalledCertificateIdsRequestJson{
-			CertificateType: []types.GetCertificateIdUseEnumType{
-				types.GetCertificateIdUseEnumTypeCSMSRootCertificate,
-			},
-		},
-		"GetLocalListVersion": &types.GetLocalListVersionRequestJson{},
-		"GetReport": &types.GetReportRequestJson{
-			RequestId: 42,
-		},
-		"GetTransactionStatus": &types.GetTransactionStatusRequestJson{
-			TransactionId: makePtr(""),
-		},
-		"GetVariables": &types.GetVariablesRequestJson{
-			GetVariableData: []types.GetVariableDataType{
-				{
-					Component: types.ComponentType{
-						Name: "SomeCtrlr",
-					},
-					Variable: types.VariableType{
-						Name: "AnyValue",
-					},
-				},
-			},
-		},
-		"InstallCertificate": &types.InstallCertificateRequestJson{
-			Certificate:     "",
-			CertificateType: types.InstallCertificateUseEnumTypeMORootCertificate,
-		},
-		"RequestStartTransaction": &types.RequestStartTransactionRequestJson{
-			IdToken: types.IdTokenType{
-				Type:    types.IdTokenEnumTypeISO14443,
-				IdToken: "DEADBEEF",
-			},
-			RemoteStartId: 12345,
-		},
-		"RequestStopTransaction": &types.RequestStopTransactionRequestJson{
-			TransactionId: "123abcde",
-		},
-		"Reset": &types.ResetRequestJson{
-			Type: types.ResetEnumTypeImmediate,
-		},
-		"SendLocalList": &types.SendLocalListRequestJson{
-			LocalAuthorizationList: []types.AuthorizationData{
-				{
-					IdToken: types.IdTokenType{
-						Type:    types.IdTokenEnumTypeISO14443,
-						IdToken: "ABCD1234",
-					},
-				},
-			},
-			UpdateType:    types.UpdateEnumTypeDifferential,
-			VersionNumber: 12,
-		},
-		"SetNetworkProfile": &types.SetNetworkProfileRequestJson{
-			ConfigurationSlot: 1,
-			ConnectionData: types.NetworkConnectionProfileType{
-				MessageTimeout:  30,
-				OcppCsmsUrl:     "https://cs.example.com/",
-				OcppInterface:   types.OCPPInterfaceEnumTypeWired0,
-				OcppTransport:   types.OCPPTransportEnumTypeJSON,
-				OcppVersion:     types.OCPPVersionEnumTypeOCPP20,
-				SecurityProfile: 2,
-			},
-		},
-		"SetVariables": &types.SetVariablesRequestJson{
-			SetVariableData: []types.SetVariableDataType{
-				{
-					Component: types.ComponentType{
-						Name: "ClockCtrlr",
-					},
-					Variable: types.VariableType{
-						Name: "TimeZone",
-					},
-					AttributeValue: "Europe/London",
-				},
-			},
-		},
-		"TriggerMessage": &types.TriggerMessageRequestJson{
-			RequestedMessage: types.MessageTriggerEnumTypeLogStatusNotification,
-		},
-		"UnlockConnector": &types.UnlockConnectorRequestJson{
-			EvseId:      1,
-			ConnectorId: 1,
-		},
-	}
-
-	for action, req := range inputMessages {
-		t.Run(action, func(t *testing.T) {
-			err := callMaker.Send(context.TODO(), "cs001", req)
-			require.NoError(t, err)
-
-			assert.Equal(t, transport.OcppVersion201, emitter.OcppVersion)
-			assert.Equal(t, "cs001", emitter.ChargeStationId)
-			assert.Equal(t, action, emitter.Message.Action)
+			err = router.Route(context.TODO(), "cs001", msg)
+			assert.NoError(t, err)
 		})
 	}
 }

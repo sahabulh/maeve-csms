@@ -6,8 +6,8 @@ import (
 	"context"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/thoughtworks/maeve-csms/manager/handlers"
 	"github.com/thoughtworks/maeve-csms/manager/ocpp/ocpp201"
-	"github.com/thoughtworks/maeve-csms/manager/testutil"
 	"testing"
 	"time"
 )
@@ -17,7 +17,7 @@ func TestSecurityEventNotificationHandler(t *testing.T) {
 
 	now := time.Now().UTC().Format(time.RFC3339)
 
-	tracer, exporter := testutil.GetTracer()
+	tracer, exporter := handlers.GetTracer()
 
 	ctx := context.Background()
 
@@ -36,7 +36,7 @@ func TestSecurityEventNotificationHandler(t *testing.T) {
 		assert.Equal(t, &ocpp201.SecurityEventNotificationResponseJson{}, resp)
 	}()
 
-	testutil.AssertSpan(t, &exporter.GetSpans()[0], "test", map[string]any{
+	handlers.AssertSpan(t, &exporter.GetSpans()[0], "test", map[string]any{
 		"security_event.timestamp": now,
 		"security_event.type":      "SomeSecurityEvent",
 	})

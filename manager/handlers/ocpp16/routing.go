@@ -30,7 +30,7 @@ func NewRouter(emitter transport.Emitter,
 	chargeStationCertProvider services.ChargeStationCertificateProvider,
 	contractCertProvider services.ContractCertificateProvider,
 	heartbeatInterval time.Duration,
-	schemaFS fs.FS) transport.MessageHandler {
+	schemaFS fs.FS) transport.Router {
 
 	standardCallMaker := NewCallMaker(emitter)
 
@@ -119,10 +119,7 @@ func NewRouter(emitter transport.Emitter,
 								RequestSchema:  "ocpp201/AuthorizeRequest.json",
 								ResponseSchema: "ocpp201/AuthorizeResponse.json",
 								Handler: handlers201.AuthorizeHandler{
-									TokenAuthService: &services.OcppTokenAuthService{
-										Clock:      clk,
-										TokenStore: engine,
-									},
+									TokenStore:                   engine,
 									CertificateValidationService: certValidationService,
 								},
 							},
@@ -159,10 +156,7 @@ func NewRouter(emitter transport.Emitter,
 								ResponseSchema: "has2be/AuthorizeResponse.json",
 								Handler: handlersHasToBe.AuthorizeHandler{
 									Handler201: handlers201.AuthorizeHandler{
-										TokenAuthService: &services.OcppTokenAuthService{
-											Clock:      clk,
-											TokenStore: engine,
-										},
+										TokenStore:                   engine,
 										CertificateValidationService: certValidationService,
 									},
 								},

@@ -20,11 +20,9 @@ func TestConfigure(t *testing.T) {
 	require.NoError(t, err)
 
 	wantApiSettings := config.ApiSettings{
-		Addr:    "localhost:9410",
-		Host:    "localhost",
-		WsPort:  80,
-		WssPort: 443,
-		OrgName: "Thoughtworks",
+		Addr:         "localhost:9410",
+		ExternalAddr: "localhost:9410",
+		OrgName:      "Thoughtworks",
 	}
 
 	assert.Equal(t, wantApiSettings, settings.Api)
@@ -32,9 +30,7 @@ func TestConfigure(t *testing.T) {
 	assert.NotNil(t, settings.TracerProvider)
 	assert.NotNil(t, settings.Storage)
 	assert.NotNil(t, settings.MsgEmitter)
-	assert.NotNil(t, settings.MsgListener)
-	assert.NotNil(t, settings.Ocpp16Handler)
-	assert.NotNil(t, settings.Ocpp201Handler)
+	assert.NotNil(t, settings.MsgHandler)
 	assert.NotNil(t, settings.ContractCertValidationService)
 	assert.NotNil(t, settings.ContractCertProviderService)
 	assert.NotNil(t, settings.ChargeStationCertProviderService)
